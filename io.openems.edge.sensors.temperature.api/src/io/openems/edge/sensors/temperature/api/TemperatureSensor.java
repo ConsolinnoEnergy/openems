@@ -44,5 +44,6 @@ public interface TemperatureSensor extends OpenemsComponent {
 	 */
 	default Channel<Integer> getTemperature() {
 		return this.channel(ChannelId.TEMPERATURE);
+
 	}
 }
