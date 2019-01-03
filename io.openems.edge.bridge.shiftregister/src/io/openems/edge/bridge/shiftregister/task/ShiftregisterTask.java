@@ -1,42 +1,43 @@
 package io.openems.edge.bridge.shiftregister.task;
 
 
+
+import io.openems.edge.common.channel.BooleanWriteChannel;
+
 public  class ShiftregisterTask {
 
 	private final int position ; 
 	private final boolean isReverse ; 
-	private boolean isActive;
-	public ShiftregisterTask(int position,boolean isReverse) {
+	private final BooleanWriteChannel relais;
+	public ShiftregisterTask(int position,boolean isReverse, BooleanWriteChannel channel) {
 		this.position = position;
 		this.isReverse = isReverse;
-		if(isReverse)
-		{
-			isActive=true;
-		}
-		else
-		{
-			isActive=false;
-		}
+		this.relais=channel;
+		this.relais.setNextValue(false);
 	}
 
 	public int getPosition()
 	{
 		return position;
 	}
+	public BooleanWriteChannel getChannel()
+	{
+		return relais;
+	}
 	public boolean isReverse()
 	{
 		return isReverse;
 	}
+
 	public boolean isActive()
 	{
-		return isActive;
+		if(this.relais.value().get() != null)
+		{
+			return this.relais.value().get();			
+		}
+		else 
+			{return false;}
 	}
 
-	public  void activate() {
-		isActive=true;
-	}
-	public  void deactivate() {
-		isActive=false;
-	}
 
 }

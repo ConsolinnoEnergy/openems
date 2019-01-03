@@ -6,10 +6,9 @@ Bundle-Description: \
 implements the functionality of a Relais behind a shiftregister
 
 
-Private-Package: \
-	io.openems.edge.actuator.relais.api
 
-Export-Package: io.openems.edge.actuator.relais.shiftregister
+Export-Package: io.openems.edge.actuator.relais.shiftregister,\
+	io.openems.edge.actuator.relais.api
 
 -includeresource: {readme.md}
 

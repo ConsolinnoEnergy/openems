@@ -31,7 +31,14 @@ public class TypeUtils {
 		}
 		switch (type) {
 		case BOOLEAN:
-			return (T) (Boolean) value;
+			if(value instanceof String)
+			{
+				return (T)Boolean.valueOf((String)value);
+			}
+			else
+			{
+				return (T) (Boolean) value;
+			}
 
 		case SHORT:
 			if (value == null) {

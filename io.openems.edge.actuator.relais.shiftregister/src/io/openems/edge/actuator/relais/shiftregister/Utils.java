@@ -5,7 +5,6 @@ import java.util.stream.Stream;
 
 import io.openems.edge.actuator.relais.api.ActuatorRelais;
 import io.openems.edge.common.channel.AbstractReadChannel;
-import io.openems.edge.common.channel.BooleanReadChannel;
 import io.openems.edge.common.channel.BooleanWriteChannel;
 import io.openems.edge.common.channel.StateCollectorChannel;
 import io.openems.edge.common.component.OpenemsComponent;

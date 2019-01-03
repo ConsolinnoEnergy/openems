@@ -39,12 +39,10 @@ public class ShiftregisterRelaisActuator extends AbstractOpenemsComponent implem
 	@Activate
 	void activate(ComponentContext context, Config config) {
 		super.activate(context, config.service_pid(), config.id(), config.enabled());
-
 		if (OpenemsComponent.updateReferenceFilter(cm, config.service_pid(), "shiftregister", config.spi_id())) {
 			return;
 		}
-
-		this.shiftregister.addTask(config.id(),new ShiftregisterTask(config.position(), !config.isOpener()));
+		this.shiftregister.addTask(config.id(),new ShiftregisterTask(config.position(), !config.isOpener(),this.getRelaisChannel()));
 	}
 	@Deactivate
 	protected void deactivate() {
@@ -65,9 +63,5 @@ public class ShiftregisterRelaisActuator extends AbstractOpenemsComponent implem
 		}
 	}
 
-	@Override
-	public String debugLog() {
-		return "RelaisActive:" + this.isActive().value().asString();
-	}
 
 }

@@ -2,12 +2,15 @@ package io.openems.edge.bridge.shiftregister;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.event.Event;
+import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +28,10 @@ import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 
 @Designate(ocd = Config.class, factory = true)
-@Component(name = "io.openems.edge.bridge.shiftregister")
+@Component(name = "Bridge.Shiftregister",
+immediate = true, //
+configurationPolicy = ConfigurationPolicy.REQUIRE, //
+property = EventConstants.EVENT_TOPIC + "=" + EdgeEventConstants.TOPIC_CYCLE_EXECUTE_WRITE)
 public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 		implements BridgeShiftregister, EventHandler, OpenemsComponent {
 
@@ -36,7 +42,6 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 
 	@Activate
 	protected void activate(ComponentContext context, Config config) {
-
 		super.activate(context, config.service_pid(), config.id(), config.enabled());
 		if (this.isEnabled()) {
 			this.worker.initial(config);
@@ -70,9 +75,8 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 		private final int millilength = 1;
 		private int length;
 		private boolean[] shifters;
-		private Config config;
+
 		public void initial(Config config) {
-			this.config = config;
 			if (gpio == null) {
 				gpio = GpioFactory.getInstance();
 			}
@@ -86,21 +90,18 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 			}
 			this.rclk.low();
 			this.clk.low();
-			super.activate(config.id());
+			this.activate(config.id());
 		}
 
 		@Override
 		public void deactivate() {
-			if(ser != null)
-			{
+			if (ser != null) {
 				gpio.unprovisionPin(ser);
 			}
-			if(clk != null)
-			{
+			if (clk != null) {
 				gpio.unprovisionPin(clk);
 			}
-			if(rclk != null)
-			{
+			if (rclk != null) {
 				gpio.unprovisionPin(rclk);
 			}
 			super.deactivate();
@@ -109,12 +110,16 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 		@Override
 		protected void forever() {
 			for (ShiftregisterTask task : tasks.values()) {
+				Optional<Boolean> optional= task.getChannel().getNextWriteValueAndReset();
+				if(optional.isPresent())
+				{
+					task.getChannel().setNextValue(optional.get());
+				}
 				boolean high = task.isReverse() ? !task.isActive() : task.isActive();
 				if (task.getPosition() < this.length) {
 					this.shifters[task.getPosition()] = high;
 				} else {
-					throw new IllegalArgumentException(
-							"There is no such position." + task.getPosition() + " maximum is " + this.length);
+					log.error("There is no such position." + task.getPosition() + " maximum is " + this.length);
 				}
 			}
 			this.shift();
@@ -132,17 +137,18 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 			Thread.sleep(millilength);
 			this.clk.low();
 		}
-		private void shift() 
-		{
+
+		private void shift() {
 			shift(false);
 		}
+
 		private void shift(boolean reverse) {
 			boolean success = false;
 			int runs = 0;
 			while (!success && runs < 5) {
 				try {
 					for (int i = length - 1; i >= 0; i--) {
-						this.nextClock(reverse?!this.shifters[i]:this.shifters[i]);
+						this.nextClock(reverse ? !this.shifters[i] : this.shifters[i]);
 					}
 					this.clk.low();
 					Thread.sleep(millilength);
