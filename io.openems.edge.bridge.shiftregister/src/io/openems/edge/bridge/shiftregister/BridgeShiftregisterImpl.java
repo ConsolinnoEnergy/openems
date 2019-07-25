@@ -72,7 +72,7 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 		private GpioPinDigitalOutput clk;
 		private GpioPinDigitalOutput rclk;
 
-		private final int millilength = 1;
+		private final int millilength = 4;
 		private int length;
 		private boolean[] shifters;
 
@@ -110,11 +110,15 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 		@Override
 		protected void forever() {
 			for (ShiftregisterTask task : tasks.values()) {
-				Optional<Boolean> optional= task.getChannel().getNextWriteValueAndReset();
-				if(optional.isPresent())
-				{
-					task.getChannel().setNextValue(optional.get());
-				}
+				Optional<Boolean> optional = null;
+				do {
+					optional= task.getChannel().getNextWriteValueAndReset();
+					if(optional.isPresent())
+					{
+						task.getChannel().setNextValue(optional.get());
+					}
+					
+				} while (optional!= null && optional.isPresent());
 				boolean high = task.isReverse() ? !task.isActive() : task.isActive();
 				if (task.getPosition() < this.length) {
 					this.shifters[task.getPosition()] = high;
@@ -146,9 +150,11 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 			boolean success = false;
 			int runs = 0;
 			while (!success && runs < 5) {
+				String output="";
 				try {
 					for (int i = length - 1; i >= 0; i--) {
 						this.nextClock(reverse ? !this.shifters[i] : this.shifters[i]);
+						output+=i+"->"+(this.shifters[i])+" ";
 					}
 					this.clk.low();
 					Thread.sleep(millilength);
@@ -158,6 +164,7 @@ public class BridgeShiftregisterImpl extends AbstractOpenemsComponent
 					rclk.low();
 					this.clk.low();
 					success = true;
+					System.out.println( output);
 				} catch (InterruptedException ex) {
 					runs++;
 				}
